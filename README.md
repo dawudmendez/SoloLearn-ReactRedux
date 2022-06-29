@@ -386,3 +386,140 @@ componentDidUpdate() {
   alert("Number of clicks: " + this.state.counter);
 }
 ```
+
+### The useEffect Hook
+- The lifecycle methods we covered are only available for class components.
+- There is a special Hook called useEffect for functional components.
+- It combines the componentDidMount, componentDidUpdate, and componentWillUnmount methods into one.
+```jsx
+function Counter() {
+  const [counter, setCounter] = useState(0);
+
+  useEffect(() => {
+    alert("Number of clicks: " + counter);
+  });
+
+  function increment() {
+    setCounter(counter+1);
+  }
+  return <div>
+  <p>{counter}</p>
+  <button onClick={increment}>Increment</button>
+  </div>;
+}
+```
+- By default, useEffect runs both, after the first render and after every update.
+- To call the method only when something changes, we can provide it a second argument:
+```jsx
+useEffect(() => {
+  //do something
+}, [count]);  
+```
+- Now, the useEffect() method will run only if count changes.
+- To mimic componentWillUnmount, useEffect may return a function that cleans up after it:
+```jsx
+useEffect(() => {
+  // do something
+  
+  return () => {
+    // cleanup
+  }; 
+});
+```
+- You can have multiple effects in the same component.
+
+## Handling Events
+### Event Handling
+```jsx
+<button onClick={handleClick}>
+  My Button
+</button>
+```
+- Clicking the button will call the handleClick function of the component.
+```jsx
+function Counter() {
+  const [counter, setCounter] = useState(0);
+
+  function increment() {
+    setCounter(counter+1);
+  }
+  return <div>
+  <p>{counter}</p>
+  <button onClick={increment}>Increment</button>
+  </div>;
+}
+```
+- The onClick event calls the increment function, which is incrementing the counter state variable.
+
+### Handling User Input
+- We can handle user input in React using the onChange event of the text field.
+- When the value of the text field changes, the event handler is called, updating the value of the field in the component's state.
+```jsx
+function Converter() {
+  const [km, setKm] = useState(0);
+
+  function handleChange(e) {
+    setKm(e.target.value);
+  }
+  function convert(km) {
+    return (km/1.609).toFixed(2);
+  }
+
+  return <div>
+  <input type="text" value={km}
+     onChange={handleChange} />
+  <p> {km} km is {convert(km)} miles </p>
+  </div>;
+}
+```
+- Our Converter component includes a text field, which calls the handleChange function when its value changes.
+- The handleChange function updates the state with the current value of the textfield, causing the component to re-render and show the corresponding miles value, which is calculated using the convert function.
+
+### Forms
+- React form elements keep their state and update it based on user input.
+- You always have the data of your form at your disposal in the state.
+```jsx
+function AddForm() {
+  const [sum, setSum] = useState(0);
+  const [num, setNum] = useState(0);
+
+  function handleChange(e) {
+    setNum(e.target.value);
+  }
+
+  function handleSubmit(e) {
+    setSum(sum + Number(num));
+    e.preventDefault();
+  }
+
+  return <form onSubmit={handleSubmit}>
+  <input type="number" value={num} onChange={handleChange} />
+  <input type="submit" value="Add" />
+  <p> Sum is {sum} </p>
+  </form>;
+}
+```
+- In the code above, the value of the input is controlled by React (we keep the value in the state).
+- When the form is submitted using the submit button, the handleSubmit function gets called, which updates the value of sum in the state.
+- An input form element whose value is controlled by React in this way is called a "controlled component".
+
+## Rendering A List
+### Lists
+```jsx
+const arr = ["A", "B", "C"];
+```
+- We need to render a list <li> element for each item in the array.
+- We can define a MyList component and pass it the array as a prop using a custom data attribute:
+```jsx
+<MyList data={arr} />
+```
+- Now, when the array is accessible via props, we can write the component logic:
+```jsx
+function MyList(props) {
+  const arr = props.data;
+  const listItems = arr.map((val) =>
+    <li>{val}</li>
+  );
+  return <ul>{listItems}</ul>;
+}
+```
