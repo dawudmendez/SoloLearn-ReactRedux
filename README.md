@@ -508,8 +508,8 @@ function AddForm() {
 ```jsx
 const arr = ["A", "B", "C"];
 ```
-- We need to render a list <li> element for each item in the array.
-- We can define a MyList component and pass it the array as a prop using a custom data attribute:
+- We need to render a `<li>` element of each item in the array.
+- We can define a **MyList** component and pass it the array as a prop using a custom **data** attribute:
 ```jsx
 <MyList data={arr} />
 ```
@@ -523,3 +523,395 @@ function MyList(props) {
   return <ul>{listItems}</ul>;
 }
 ```
+
+### Keys
+- Each element in a list must have a key attribute.
+- Keys act as a unique identity, identifying each element.
+- Usually, these are IDs from your data, or can be auto-generated indexes.
+```jsx
+const listItems = arr.map((val, index) =>
+  <li key={index}>{val}</li>
+);
+```
+
+### Contact Manager
+![App](https://api.sololearn.com/DownloadFile?id=4390)
+- By looking at the mockup, it makes sense to have two components:
+	- **AddPersonForm**: a form with the text field and Add button.
+	- **PeopleList**: a list of contacts.
+
+#### AddPersonForm
+- Uses state to manage the value of the text field:
+```jsx
+function AddPersonForm() {
+  const [ person, setPerson ] = useState("");
+
+  function handleChange(e) {
+    setPerson(e.target.value);
+  }
+
+  function handleSubmit(e) {
+    e.preventDefault();
+  }
+  return (
+    <form onSubmit={handleSubmit}>
+    <input type="text" 
+    placeholder="Add new contact" 
+    onChange={handleChange} 
+    value={person} />
+    <button type="submit">Add</button>
+    </form>
+    );
+}
+```
+- For now, we just prevent the default behavior when the form is submitted.
+
+#### PeopleList
+- Received an array representing the contacts and renders a list on the page:
+```jsx
+function PeopleList(props) {
+  const arr = props.data;
+  const listItems = arr.map((val, index) =>
+    <li key={index}>{val}</li>
+  );
+  return <ul>{listItems}</ul>;
+}
+```
+
+#### Rendering both components
+```jsx
+const contacts = ["James Smith", "Thomas Anderson", "Bruce Wayne"];
+
+const el = (
+  <div>
+    <AddPersonForm />
+    <PeopleList data={contacts} />
+  </div>
+);
+```
+
+### Sharing State
+- Right now, our AddPersonForm independently keeps its state.
+- How can we add a new contact to our PeopleList then, when the form is submitted?
+- We can do that by lifting the state up to a parent component.
+- Let's create a parent component called **ContactManager**, which includes the **AddPersonForm** and **PeopleList** as child components and holds the contacts list in its state:
+```jsx
+function ContactManager(props) {
+  const [contacts, setContacts] = useState(props.data);
+
+  return (
+    <div>
+      <AddPersonForm />
+      <PeopleList data={contacts} />
+    </div>
+  );
+} 
+```
+- Data can be passed from the parent to the child, but not from the child to the parent.
+- React uses what is called **unidirectional data flow**, in other words, data only flows downward, so to speak.
+
+### Adding a Contact
+- Now, we can create an **addPerson()** function to our ContactManager component to add a new person to our contacts state array:
+```jsx
+function ContactManager(props) {
+  const [contacts, setContacts] = useState(props.data);
+
+  function addPerson(name) {
+    setContacts([...contacts, name]);
+  }
+ ...
+}
+```
+- We can pass a function reference to another component
+```jsx
+function ContactManager(props) {
+  const [contacts, setContacts] = useState(props.data);
+
+  function addPerson(name) {
+    setContacts([...contacts, name]);
+  }
+
+  return (
+    <div>
+      <AddPersonForm handleSubmit={addPerson} />
+      <PeopleList data={contacts} />
+    </div>
+  );
+}
+```
+- We passed down the addPerson() function to our AddPersonForm using a prop called handleSubmit.
+- Now, our PeopleList can call the handleSubmit function that it received when the form is submitted, to add a new person to the list:
+```jsx
+function AddPersonForm(props) {
+  const [ person, setPerson ] = useState('');
+    
+  function handleChange(e) {
+    setPerson(e.target.value);
+  }
+    
+  function handleSubmit(e) {
+    props.handleSubmit(person);
+    setPerson('');
+    e.preventDefault();
+  }
+  return (
+    <form onSubmit={handleSubmit}>
+      <input type="text" 
+        placeholder="Add new contact" 
+        onChange={handleChange} 
+        value={person} />
+      <button type="submit">Add</button>
+    </form>
+  );
+}
+```
+
+# Intro to Redux
+## State Management
+### Introducing Redux
+- Redux was created to make state management predictable, providing a single state container and strict rules on how state can be changed.
+- Redux is a small JavaScript library and can be used with any front-end framework, such as React, Angular, jQuery.
+- It employs the "single source of truth" pattern.
+- In short, single source of truth just refers to relocating the application state and all associated logic outside of the application, allowing ANY component to access the data it needs.
+
+## Core Concepts
+### Store
+- In Redux, the application's state is stored as a simple object, called store.
+- There should only be a single store in an app.
+- For example, a store can look like this:
+```jsx
+{
+  contacts: [{
+    name: 'David'
+  }, {
+    name: 'Amy'
+  }],
+  toggle: true
+}
+```
+- You cannot change the state directly. Instead, you need to dispatch an action.
+
+### Actions & Reducers
+- An action is just a plain JavaScript object:
+```jsx
+{ 
+  type: 'ADD_CONTACT', 
+  name: 'James' 
+}
+```
+- The code above defines an action with type ADD_CONTACT and a name property.
+- An action clearly describes why the state change happened, and can be dispatched from anywhere in your app.
+- To tie the store and the action together, we need to write a function, called a reducer.
+- It takes state and action as arguments, and returns the next state of the app.
+```jsx
+function contactsApp(state, action) {
+  if (action.type === 'ADD_CONTACT') {
+    return [ ...state,  action.name ]
+  } else {
+    return state
+  }
+}
+```
+- The code above defines a simple reducer function, that checks the action and returns the new state.
+- We have not touched any React specific syntax, all of the above is plain JavaScript.
+
+### Core Concepts
+Redux can be described using the following principles:
+- **Single source of truth**: The global state of the app is stored in a single store.
+- **State is read-only**: You can change the state only by dispatching actions. Action are objects, that contain information about what should be changed.
+- **Pure reducers**: Reducers are functions that handle the actions and return the next state of the application. Reducers need to be pure, meaning they cannot modify the state, they need to return a new state object.
+
+## Actions
+- Action can be viewed as payloads of information that send data to the store.
+- Actions are represented by simple JavaScript object and need to have a type property:
+```jsx
+{
+  type: 'ADD_CONTACT',
+  name: 'James'
+}
+```
+- In the example above, we define an action with the type ADD_CONTACT and provide it a name property as its payload.
+- Note that the action type needs to be in upper snake case.
+- You can use any naming and structure for the other properties defining the data in the action.
+```jsx
+{
+    type: 'ADD_CONTACT',
+    payload: {
+        name: "Jimmy Barnes"
+    }
+ }
+```
+- You should pass as little data in each action as possible. That keeps the actions clean and easy to read.
+
+### Action Creators
+- In order to use the same action with different payloads, as well as create reusable code, we can create Action creators.
+- Action creators are simple functions that return actions.
+```jsx
+function addContact(person) {
+  return {
+    type: 'ADD_CONTACT',
+    payload: person
+  }
+}
+```
+- The action creator function takes a person parameter and uses that as the actions payload.
+- Now, we can use the action creator to create multiple new contacts by passing it the corresponding data.
+- Action creators are not built into the Redux library by default. It is a pattern that was implemented to create code that reflects a more DRY (Don't Repeat Yourself) approach.
+
+### Reducers
+- Reducers are functions that handle the actions.
+- The function takes the current state and the action as its parameters and returns the new state.
+- A reducer can handle multiple actions, so usually it includes a switch statement for each action case.
+```jsx
+function contactsApp(state, action) {
+  switch (action.type) {
+    case 'ADD_CONTACT':
+      return [ ...state,  action.person ]
+    default:
+      return state
+  }
+}
+```
+- In the code above, our reducer function uses a switch statement to handle the appropriate actions.
+- As the default case, it just returns the current state.
+- Remember, the reducer has to be a pure function, meaning it cannot modify the current state. It has to return a new state object instead.
+- The default case is added for handling unknown actions.
+
+### Multiple Reducers
+- If you have more than one entity (i.e. users, products, invoices, orders, etc.), it's typically a good idea to break them into multiple reducer functions to separate concerns.
+- Redux gives us a method that we can use called combineReducers.
+- This allows us to use more than one reducer so that when an action gets dispatched, the action would get run through all of the reducers instead of only one.
+- It also allows us to separate the concerns of our store state.
+```jsx
+const contactsApp = combineReducers({
+  addContacts,
+  doSomething
+})
+```
+- Now, our contactsApp is combining two reducers into one.
+- It's a good practice to provide each reducer only the part of the state that it needs to manage. This is called **reducer composition**, and is a fundamental pattern of building Redux apps.
+
+### Redux with React
+- First, we need to install Redux:
+```bash
+npm install redux 
+```
+- To use it with React, we need to install another library, called react-redux:
+```bash
+npm install react-redux
+```
+- The react-redux library binds React with Redux, allowing React components to read data from a Redux store, and dispatch actions to the store to update data.
+
+### Counter App
+- As our first example, let's build the **Counter** app we made in the previous module using Redux!
+- First, we need to create our action and corresponding _reducer_.
+```jsx
+const initialState = {
+  count: 0
+};
+
+function reducer(state = initialState, action) {
+  switch(action.type) {
+    case 'INCREMENT':
+      return { count: state.count + action.num };
+    default:
+      return state;
+  }
+}
+```
+- The code above defines a reducer function, which returns the new state based on the given action. We increment the count state variable by the provided num value.
+- We also provide a default value for our state using the initialState variable.
+
+### Creating the Store
+- To create the store, we call the createStore() function, which takes the reducer as its parameter:
+```jsx
+const store = createStore(reducer);
+```
+- But how do we pass the store to our components?
+- That is achieved using a special `<Provider>` element. It makes the store available to any nested child component.
+- So, for our counter, we would have the following:
+```jsx
+const el = <Provider store={store}>
+    <Counter/>
+  </Provider>; 
+```
+- Provider takes the store as an attribute and makes it available to its child component.
+- We need to import `{ createStore }` and `{ Provider }` using the following syntax:
+```jsx
+import { Provider } from 'react-redux';
+import { createStore } from 'redux';
+```
+
+### Connecting to the Store
+- At this point, we have created our action, the reducer, the store, and made it available to our Counter component using the Provider element.
+- In order to connect our component to the store, we need to call the connect() function.
+- The connect() function returns a new component, that wraps the component you passed to it and connects it to the store using its special parameter functions.
+```jsx
+function connect(mapStateToProps?, mapDispatchToProps?) 
+```
+connect() takes two optional parameters:
+
+#### mapStateToProps
+- This function is called every time the store state changes. It receives the state as a parameter and returns the state for the component.
+- For example, for our Counter, we need to return the count state variable:
+```jsx
+function mapStateToProps(state) {
+  return {
+    count: state.count
+  };
+}
+```
+- Now, our component can access the **count** variable using its **props**.
+- Just as the name of the function states, it maps the state to the props.
+
+#### mapDispatchToProps
+- As you may have guessed from the name, this parameter is used to map the dispatch functions to props.
+- It can be a simple object, defining the function that needs to be mapped:
+```jsx
+const mapDispatchToProps = {
+  incrementCounter
+}
+```
+- This might seem a bit confusing, but its very straightforward: **mapStateToProps** simply returns the state variables as props to our component, while **mapDispatchToProps** allows to define how we dispatch actions and make the dispatching functions available as props.
+- **mapDispatchToProps** can also be defined as a function. Take a look at the [official documentation](https://react-redux.js.org/using-react-redux/connect-mapdispatch) for more details.
+- Note that we need to import the connect function:
+```jsx
+import { connect } from 'react-redux';
+```
+
+### Accessing The Store
+- Inside our component we just access the store properties using props
+```jsx
+function Counter(props) {
+  function handleClick() {
+    props.incrementCounter(1);
+  }
+    return <div>
+    <p>{props.count}</p>
+    <button onClick={handleClick}>Increment</button>
+    </div>;
+}
+```
+- Notice, that we pass 1 as the argument to our **incrementCounter()**, making our counter increment by 1. 
+- We can change the value to any other number, and our counter will behave as expected, because we handled the increment parameter in our reducer.
+- Now, the only thing left is to call the connect() function for our Counter component and render it on the page:
+```jsx
+const Counter = connect(mapStateToProps, mapDispatchToProps)(Counter);
+
+const el = <Provider store={store}>
+          <Counter/>
+        </Provider>;
+```
+
+### Project Structure
+- We can move our Counter component and the action creator function to a separate Counter.js file.
+- In order to use the Counter component in our index.js, we need to export it first:
+```jsx
+export default connect(mapStateToProps, mapDispatchToProps)(Counter);
+```
+ - Notice, we export the connected component.
+ - Now, we can import the component in index.js:
+ ```jsx
+import Counter from './Counter'; 
+```
+- We use the _ES6 modules system_, which allows use to export and import modules.
